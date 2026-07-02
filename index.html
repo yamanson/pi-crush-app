@@ -3,43 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi-Crush</title>
+    <title>Pi-Crush Pro SDK</title>
+    <!-- Pi Network SDK Kütüphanesi -->
+    <script src="https://minepi.com"></script>
     <style>
-        body { background-color: #1a1a2e; color: #fff; font-family: sans-serif; text-align: center; }
-        #board { display: grid; grid-template-columns: repeat(7, 50px); grid-template-rows: repeat(7, 50px); gap: 4px; justify-content: center; margin-top: 20px; }
-        .tile { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; user-select: none; }
-        /* Geçici renk kodları (Daha sonra fütüristik emojiler/ikonlar gelecek) */
-        .pi { background-color: #8a2be2; } /* Mor - Pi Logosu */
-        .ai { background-color: #ff4500; } /* Turuncu - AI Çipi */
-        .block { background-color: #1e90ff; } /* Mavi - Kripto Blok */
-        .pick { background-color: #32cd32; } /* Yeşil - Kazma */
-        .cloud { background-color: #ff69b4; } /* Pembe - Bulut */
+        body { background-color: #1a1a2e; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        #auth-status { font-size: 14px; color: #ffbe0b; margin-bottom: 10px; background: #222; padding: 5px; display: inline-block; border-radius: 5px; }
+        #stats-container { display: flex; justify-content: center; gap: 30px; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
+        .stat-box { background: #16213e; padding: 10px 20px; border-radius: 8px; border: 2px solid #e94560; }
+        #board { display: grid; grid-template-columns: repeat(7, 50px); grid-template-rows: repeat(7, 50px); gap: 4px; justify-content: center; margin: 10px auto; background-color: #16213e; padding: 10px; border-radius: 12px; width: max-content; }
+        .tile { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; user-select: none; transition: transform 0.1s ease; }
+        .tile:active { transform: scale(0.9); }
+        .pi { background-color: #8a2be2; } .ai { background-color: #ff4500; } .block { background-color: #1e90ff; } .pick { background-color: #32cd32; } .cloud { background-color: #ff69b4; }
+        #game-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0f3460; padding: 30px; border-radius: 15px; border: 3px solid #ffbe0b; box-shadow: 0 0 20px rgba(0,0,0,0.7); z-index: 100; text-align: center; }
+        button { background: #e94560; color: white; border: none; padding: 10px 20px; font-size: 18px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+        button:hover { background: #ff4500; }
     </style>
 </head>
 <body>
-    <h1>Pi-Crush (Test Sürümü)</h1>
-    <p>Hedef: Benzer renkleri yan yana getirerek eşleştirin.</p>
+    <h1>Pi-Crush Pro</h1>
+    <div id="auth-status">Pi Bağlantısı Bekleniyor...</div>
+    
+    <div id="stats-container">
+        <div class="stat-box">Bölüm: <span id="level-val">1</span></div>
+        <div class="stat-box">Hamle: <span id="moves-val">20</span></div>
+        <div class="stat-box">Skor: <span id="score-val">0</span> / <span id="target-val">150</span></div>
+    </div>
+    
     <div id="board"></div>
 
+    <div id="game-modal">
+        <h2 id="modal-title">TEBRİKLER!</h2>
+        <p id="modal-text">Bölümü başarıyla geçtiniz.</p>
+        <button id="modal-btn" onclick="closeModal()">Sonraki Bölüm</button>
+    </div>
+
     <script>
+        // Pi SDK Başlatma Fonksiyonları
+        document.addEventListener("DOMContentLoaded", async () => {
+            const statusDiv = document.getElementById('auth-status');
+            try {
+                if (window.Pi) {
+                    // SDK'yı 2.0 sürümüne göre başlatıyoruz
+                    await window.Pi.init({ version: "2.0", sandbox: true });
+                    
+                    // Kullanıcıdan kimlik doğrulama istiyoruz
+                    const scopes = ['username'];
+                    const auth = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
+                    
+                    statusDiv.textContent = `Hoş geldin Pilot: ${auth.user.username}`;
+                } else {
+                    statusDiv.textContent = "Pi Browser dışında çalışıyor (Test Modu)";
+                }
+            } catch (err) {
+                console.error(err);
+                statusDiv.textContent = "Giriş Yapılamadı (Normal Tarayıcı Modu)";
+            }
+        });
+
+        function onIncompletePaymentFound(payment) {
+            // Tamamlanmamış ödemeleri yönetmek için boş fonksiyon (İleride Pi harcamaları için kullanılacak)
+        }
+
+        // --- OYUN MOTORU KODLARI ---
         const width = 7;
         const tileTypes = ['pi', 'ai', 'block', 'pick', 'cloud'];
+        const emojis = { 'pi': 'π', 'ai': '🤖', 'block': '📦', 'pick': '⛏️', 'cloud': '☁️' };
         const board = document.getElementById('board');
-        let tiles = [];
+        
+        let score = 0, moves = 20, currentLevel = 1, targetScore = 150;
+        let tiles = [], tileIdBeingDragged, tileIdBeingReplaced, gameActive = true;
 
-        // Oyun tahtasını oluşturma
+        function updateUI() {
+            document.getElementById('score-val').textContent = score;
+            document.getElementById('moves-val').textContent = moves;
+            document.getElementById('level-val').textContent = currentLevel;
+            document.getElementById('target-val').textContent = targetScore;
+        }
+
         function createBoard() {
+            board.innerHTML = ""; tiles = [];
             for (let i = 0; i < width * width; i++) {
                 const tile = document.createElement('div');
-                tile.className = 'tile ' + tileTypes[Math.floor(Math.random() * tileTypes.length)];
+                const randomType = tileTypes[Math.floor(Math.random() * tileTypes.length)];
+                tile.className = `tile ${randomType}`;
+                tile.textContent = emojis[randomType];
                 tile.setAttribute('draggable', true);
                 tile.setAttribute('id', i);
+                
+                tile.addEventListener('dragstart', dragStart);
+                tile.addEventListener('dragover', dragOver);
+                tile.addEventListener('dragenter', dragEnter);
+                tile.addEventListener('dragleave', dragLeave);
+                tile.addEventListener('drop', dragDrop);
+                tile.addEventListener('dragend', dragEnd);
+
                 board.appendChild(tile);
                 tiles.push(tile);
             }
+            checkMatchesAndDrop();
         }
-        createBoard();
-        // Eşleştirme ve sürükleme mantığı bu alana eklenecek
-    </script>
-</body>
-</html>
+
+        function dragStart() { if(!gameActive) return; tileIdBeingDragged = parseInt(this.id); }
+        function dragOver(e) { e.preventDefault(); }
+        function dragEnter(e) { e.preventDefault(); }
+        function dragLeave() {}
+        function dragDrop() { if(!gameActive) return; tileIdBeingReplaced = parseInt(this.id); }
+
+        function dragEnd() {
+            if(!gameActive) return;
+            const validMoves = [tileIdBeingDragged - 1, tileIdBeingDragged + 1, tileIdBeingDragged - width, tileIdBeingDragged + width];
+            const isValidMove = validMoves.includes(tileIdBeingReplaced);
+
+            if (tileIdBeingReplaced >= 0 && isValidMove) {
+                swapTiles(tileIdBeingDragged, tileIdBeingReplaced);
+                const hasRowMatch = checkRowForThree();
+                const hasColumnMatch = checkColumnForThree();
+
+                if (!hasRowMatch && !hasColumnMatch) {
+                    swapTiles(tileIdBeingDragged, tileIdBeingReplaced);
+                } else {
+                    moves--;
+                    updateUI();
+                    checkMatchesAndDrop();
+                    checkGameStatus();
+                }
+            }
+        }
+
+        function swapTiles(id1, id2) {
+            const type1 = tiles[id1].className.split(' ');
+            const type2 = tiles[id2].className.split(' ');
+            tiles[id1].className = `tile ${type2}`; tiles[id1].textContent = emojis[type2];
+            tiles[id2].className = `tile ${type1}`; tiles[id2].textContent = emojis[type1];
+        }
+
+        function checkRowForThree() {
+            let foundMatch = false;
+            for (let i = 0; i < 49; i++) {
+                if (i % width > 4) continue;
+                let rowOfThree = [i, i + 1, i + 2];
+                let type = tiles[i].className.split(' ');
+                if (type && !tiles[i].className.includes('blank') && rowOfThree.every(idx => tiles[idx].className.split(' ') === type)) {
+                    score += 10; updateUI();
+                    rowOfThree.forEach(idx => { tiles[idx].className = 'tile blank'; tiles[idx].textContent = ''; });
+                    foundMatch = true;
+                }
+            }
+            return foundMatch;
+        }
+
+        function checkColumnForThree() {
+            let foundMatch = false;
+            for (let i = 0; i < 35; i++) {
+                let colOfThree = [i, i + width, i + (width * 2)];
+                let type = tiles[i].className.split(' ');
+                if (type && !tiles[i].className.includes('blank') && colOfThree.every(idx => tiles[idx].className.split(' ') === type)) {
+                    score += 10; updateUI();
+                    colOfThree.forEach(idx => { tiles[idx].className = 'tile blank'; tiles[idx].textContent = ''; });
+                    foundMatch = true;
+                }
+            }
+            return foundMatch;
+        }
+
+        function moveIntoSquareBelow() {
+            for (let i = 0; i < 42; i++) {
+                if (tiles[i + width].className.includes('blank')) {
+                    const type = tiles[i].className.split(' ');
+                    if(type) {
+                        tiles[i + width].className = `tile ${type}`; tiles[i + width].textContent = emojis[type];
+                        tiles[i].className = 'tile blank'; tiles[i].textContent = '';
+                    }
+                }
+            }
+            for (let i = 0; i < width; i++) {
+                if (tiles[i].className.includes('blank')) {
+                    const type = tileTypes[Math.floor(Math.random() * tileTypes.length)];
+                    tiles[i].className = `tile ${type}`; tiles[i].textContent = emojis[type];
+                }
+            }
+        }
+
+        function checkMatchesAndDrop() {
+            let matchFound = true, loops = 0;
+            while (matchFound && loops < 10) {
+                matchFound = checkRowForThree() || checkColumnForThree();
+                if (matchFound) { for (let j = 0; j < width; j++) moveIntoSquareBelow(); }
+                loops++;
+            }
+        }
+
+        function checkGameStatus() {
+            if (score >= targetScore) {
+                showModal("BÖLÜM GEÇİLDİ!", "Tebrikler, hedef skora ulaştınız!", "Sonraki Bölüm");
+                gameActive = false;
+            } else if (moves <= 0) {
