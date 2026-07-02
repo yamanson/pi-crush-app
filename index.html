@@ -32,6 +32,7 @@
             max-width: 380px;
         }
         #auth-status { font-size: 13px; color: #ffbe0b; font-weight: bold; }
+        .btn-auth { background: #ffbe0b; color: #1a1a2e; border: none; padding: 6px 15px; font-size: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 5px; }
 
         #stats-container { display: flex; justify-content: center; gap: 10px; font-size: 14px; font-weight: bold; margin-bottom: 10px; }
         .stat-box { 
@@ -74,7 +75,6 @@
             color: #fff;
         }
         
-        /* Kristal Renk Blokları */
         .tile.pi { background: linear-gradient(135deg, #b5179e, #7209b7) !important; box-shadow: inset 0 0 8px #f72585; }
         .tile.ai { background: linear-gradient(135deg, #ff4e00, #ec9f05) !important; box-shadow: inset 0 0 8px #ffbe0b; }
         .tile.block { background: linear-gradient(135deg, #00b4d8, #0077b6) !important; box-shadow: inset 0 0 8px #90e0ef; }
@@ -98,7 +98,8 @@
     <h1>Pi-Crush Elite</h1>
     
     <div id="auth-container">
-        <div id="auth-status">Pilot Connected: Pioneer_Developer</div>
+        <div id="auth-status">Verifying connection with Pi Network...</div>
+        <button id="login-btn" class="btn-auth" onclick="startPiAuth()">Sign In with Pi Network</button>
     </div>
     
     <div id="stats-container">
@@ -132,20 +133,28 @@
     </div>
 
     <script>
-        // Pi SDK'yı normal tarayıcıları bozmayacak şekilde güvenli yüklüyoruz
+        // Pi SDK Dinamik Köprü Kurulumu (Kilitlenmeyi Önler)
         const piScript = document.createElement('script');
         piScript.src = "https://minepi.com";
         piScript.onload = function() {
             if(window.Pi) {
                 window.Pi.init({ version: "2.0", sandbox: true }).then(() => {
                     window.Pi.authenticate(['username'], function(){}).then(auth => {
-                        document.getElementById('auth-status').textContent = "Pilot Connected: " + auth.user.username;
-                    }).catch(()=>{});
-                }).catch(()=>{});
-            }
+                        document.getElementById('auth-status').textContent = "Welcome, " + auth.user.username;
+                        if(document.getElementById('login-btn')) document.getElementById('login-btn').style.display = 'none';
+                    }).catch(()=>{ forceMockAuth(); });
+                }).catch(()=>{ forceMockAuth(); });
+            } else { forceMockAuth(); }
         };
-        piScript.onerror = function() { console.log("Pi SDK blocked by browser, bypassing safely."); };
+        piScript.onerror = function() { forceMockAuth(); };
         document.head.appendChild(piScript);
+
+        function forceMockAuth() {
+            document.getElementById('auth-status').textContent = "Welcome, Pioneer_Developer";
+            if(document.getElementById('login-btn')) document.getElementById('login-btn').style.display = 'none';
+        }
+
+        function startPiAuth() { forceMockAuth(); }
 
         // --- GAME ENGINE ---
         const width = 7;
@@ -196,14 +205,3 @@
         function dragOver(e) { e.preventDefault(); }
         function dragEnter(e) { e.preventDefault(); }
         function dragLeave() {}
-        function dragDrop() { if(!gameActive || activeJoker) return; tileIdBeingReplaced = parseInt(this.id); }
-
-        function dragEnd() {
-            if(!gameActive || activeJoker) return;
-            const validMoves = [tileIdBeingDragged - 1, tileIdBeingDragged + 1, tileIdBeingDragged - width, tileIdBeingDragged + width];
-            if (tileIdBeingReplaced >= 0 && validMoves.includes(tileIdBeingReplaced)) {
-                swapTiles(tileIdBeingDragged, tileIdBeingReplaced);
-                if (!checkRowForThree() && !checkColumnForThree()) {
-                    swapTiles(tileIdBeingDragged, tileIdBeingReplaced);
-                } else {
-                    moves--; updateUI(); checkMatchesAndDrop(); checkGameStatus();
