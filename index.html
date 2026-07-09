@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pi-Crush Premium Elite</title>
-    <!-- Sabit ve kararlı resmi Pi SDK kütüphanesi -->
+    <!-- Resmi Kararlı Pi SDK -->
     <script src="https://minepi.com"></script>
     <style>
         body { 
@@ -100,8 +100,8 @@
     <h1>Pi-Crush Elite</h1>
     
     <div id="auth-container">
-        <div id="auth-status">Pilot Connected: Pioneer_Developer</div>
-        <button id="login-btn" class="btn-auth" onclick="startPiAuth()">Authenticate Pi Account</button>
+        <div id="auth-status">Oyun Yükleniyor... / Game Loading...</div>
+        <button id="login-btn" class="btn-auth" style="display:none;" onclick="startPiAuth()">Sign In with Pi Network</button>
     </div>
     
     <div id="stats-container">
@@ -135,6 +135,58 @@
     </div>
 
     <script>
+        // --- GERÇEK MOBİL PI BROWSER DOĞRULAMA KÖPRÜSÜ ---
+        document.addEventListener("DOMContentLoaded", () => {
+            // Önce oyun tahtasını koşulsuz şartsız hemen açıyoruz (Kilitlenmeyi önler)
+            createBoard();
+            updateUI();
+            
+            // Pi SDK'yı canlı (production) modda ayağa kaldırıyoruz
+            setTimeout(async () => {
+                const statusDiv = document.getElementById('auth-status');
+                const loginBtn = document.getElementById('login-btn');
+                
+                if (window.Pi) {
+                    try {
+                        // SANDBOX TAMAMEN KALDIRILDI - DOĞRUDAN CANLI BAĞLANTI
+                        await window.Pi.init({ version: "2.0" });
+                        
+                        window.Pi.authenticate(['username'], onIncompletePaymentFound)
+                        .then(auth => {
+                            statusDiv.textContent = "Welcome, " + auth.user.username;
+                            if(loginBtn) loginBtn.style.display = 'none';
+                        })
+                        .catch(err => {
+                            statusDiv.textContent = "Giriş Butonuna Basınız.";
+                            if(loginBtn) loginBtn.style.display = 'inline-block';
+                        });
+                    } catch (e) {
+                        statusDiv.textContent = "Connected (Local Mode)";
+                    }
+                } else {
+                    statusDiv.textContent = "Connected (Local Mode)";
+                }
+            }, 500);
+        });
+
+        async function startPiAuth() {
+            const statusDiv = document.getElementById('auth-status');
+            const loginBtn = document.getElementById('login-btn');
+            if (window.Pi) {
+                try {
+                    statusDiv.textContent = "Connecting...";
+                    const auth = await window.Pi.authenticate(['username'], onIncompletePaymentFound);
+                    statusDiv.textContent = "Welcome, " + auth.user.username;
+                    if(loginBtn) loginBtn.style.display = 'none';
+                } catch(e) {
+                    statusDiv.textContent = "Connected (Local Mode)";
+                    if(loginBtn) loginBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function onIncompletePaymentFound(payment) {}
+
         // --- GAME ENGINE ---
         const width = 7;
         const tileTypes = ['pi', 'ai', 'block', 'pick', 'cloud'];
@@ -146,17 +198,8 @@
         let inventory = { hammer: 1, bomb: 1, shuffle: 1 };
         let activeJoker = null;
 
-        function updateUI() {
-            document.getElementById('score-val').textContent = score;
-            document.getElementById('moves-val').textContent = moves;
-            document.getElementById('level-val').textContent = currentLevel;
-            document.getElementById('target-val').textContent = targetScore;
-            document.getElementById('hammer-count').textContent = inventory.hammer;
-            document.getElementById('bomb-count').textContent = inventory.bomb;
-            document.getElementById('shuffle-count').textContent = inventory.shuffle;
-        }
-
         function createBoard() {
+            if(tiles.length > 0) return;
             board.innerHTML = "";
             tiles = [];
             for (let i = 0; i < width * width; i++) {
@@ -169,43 +212,3 @@
                 
                 tile.addEventListener('dragstart', dragStart);
                 tile.addEventListener('dragover', dragOver);
-                tile.addEventListener('dragenter', dragEnter);
-                tile.addEventListener('dragleave', dragLeave);
-                tile.addEventListener('drop', dragDrop);
-                tile.addEventListener('dragend', dragEnd);
-                tile.addEventListener('click', tileClick);
-                board.appendChild(tile);
-                tiles.push(tile);
-            }
-            checkMatchesAndDrop();
-        }
-
-        function dragStart() { if(!gameActive || activeJoker) return; tileIdBeingDragged = parseInt(this.id); }
-        function dragOver(e) { e.preventDefault(); }
-        function dragEnter(e) { e.preventDefault(); }
-        function dragLeave() {}
-        function dragDrop() { if(!gameActive || activeJoker) return; tileIdBeingReplaced = parseInt(this.id); }
-
-        function dragEnd() {
-            if(!gameActive || activeJoker) return;
-            const validMoves = [tileIdBeingDragged - 1, tileIdBeingDragged + 1, tileIdBeingDragged - width, tileIdBeingDragged + width];
-            if (tileIdBeingReplaced >= 0 && validMoves.includes(tileIdBeingReplaced)) {
-                swapTiles(tileIdBeingDragged, tileIdBeingReplaced);
-                if (!checkRowForThree() && !checkColumnForThree()) {
-                    swapTiles(tileIdBeingDragged, tileIdBeingReplaced);
-                } else {
-                    moves--; updateUI(); checkMatchesAndDrop(); checkGameStatus();
-                }
-            }
-        }
-
-        function swapTiles(id1, id2) {
-            const class1 = tiles[id1].className;
-            const text1 = tiles[id1].textContent;
-            tiles[id1].className = tiles[id2].className;
-            tiles[id1].textContent = tiles[id2].textContent;
-            tiles[id2].className = class1;
-            tiles[id2].textContent = text1;
-        }
-
-        function getTileType(tile) {
