@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pi-Crush Premium Elite</title>
-    <!-- Resmi Kararlı Pi SDK -->
-    <script src="https://minepi.com"></script>
     <style>
         body { 
             background: radial-gradient(circle, #1a0033 0%, #0a001a 100%);
@@ -34,7 +32,7 @@
             border: 1px solid #ffbe0b; 
             max-width: 90%;
         }
-        #auth-status { font-size: 13px; color: #ffbe0b; font-weight: bold; cursor: pointer; }
+        #auth-status { font-size: 13px; color: #ffbe0b; font-weight: bold; }
 
         #stats-container { display: flex; justify-content: center; gap: 5px; font-size: 12px; font-weight: bold; margin-bottom: 10px; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto; }
         .stat-box { 
@@ -48,7 +46,6 @@
         .stat-label { font-size: 9px; text-transform: uppercase; color: #aaa; margin-bottom: 2px; }
         .stat-val { font-size: 15px; color: #fff; }
 
-        /* Mobil ve Masaüstü Uyumlu Sıkışmayan Esnek Oyun Tahtası */
         #board { 
             display: grid; 
             grid-template-columns: repeat(7, 1fr); 
@@ -104,7 +101,7 @@
     <h1>Pi-Crush Elite</h1>
     
     <div id="auth-container">
-        <div id="auth-status" onclick="triggerManualVerification()">Pilot Connected: Pioneer_Developer (Click to Verify)</div>
+        <div id="auth-status">Pilot Connected: Pioneer_Developer</div>
     </div>
     
     <div id="stats-container">
@@ -138,7 +135,7 @@
     </div>
 
     <script>
-        // --- GAME ENGINE ---
+        // --- GAME ENGINE (RUNS INSTANTLY NO MATTER WHAT) ---
         const width = 7;
         const tileTypes = ['pi', 'ai', 'block', 'pick', 'cloud'];
         const emojis = { 'pi': 'π', 'ai': '🤖', 'block': '📦', 'pick': '⛏️', 'cloud': '☁️' };
@@ -170,7 +167,11 @@
                 tile.setAttribute('draggable', true);
                 tile.setAttribute('id', i);
                 
-                // Mobil Dokunmatik Desteği
+                // Mouse Click Fallback for Desktop previews
+                tile.addEventListener('click', function() {
+                    if (activeJoker) { tileClick.call(this); }
+                });
+
                 tile.addEventListener('touchstart', touchStart, {passive: true});
                 tile.addEventListener('touchmove', touchMove, {passive: false});
                 tile.addEventListener('touchend', touchEnd);
@@ -181,13 +182,13 @@
                 tile.addEventListener('dragleave', dragLeave);
                 tile.addEventListener('drop', dragDrop);
                 tile.addEventListener('dragend', dragEnd);
-                tile.addEventListener('click', tileClick);
                 board.appendChild(tile);
                 tiles.push(tile);
             }
             checkMatchesAndDrop();
         }
 
+        // TOUCH CONTROLS
         let startX, startY, activeTouchTileId;
         function touchStart(e) {
             if(!gameActive || activeJoker) return;
@@ -212,3 +213,5 @@
                 else if (diffY < -30 && activeTouchTileId >= width) targetId = activeTouchTileId - width;
             }
 
+            if (targetId !== -1) {
+                tileIdBeingDragged = activeTouchTileId;
