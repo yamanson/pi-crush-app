@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pi-Crush Elite</title>
-    <!-- Official Pi Network SDK -->
+    <!-- STEP 1 - Sign the user in, in the browser by loading Pi SDK first -->
     <script src="https://minepi.com"></script>
     <style>
         :root {
@@ -220,6 +220,7 @@
                 <h1 class="title-glow">PI-CRUSH</h1>
                 <div class="subtitle">Elite Edition</div>
             </div>
+            <!-- Call Pi.authenticate on sign-in button press -->
             <button class="action-btn" id="auth-btn" onclick="authenticatePioneer()">Connect Pi Wallet</button>
         </div>
 
@@ -245,31 +246,31 @@
     </div>
 
     <script>
-        // Official Pi SDK Authentication flow required by App Studio
-        const scopes = ['username', 'payments'];
-        
+        let accessToken = null;
+
         function onIncompletePaymentFound(payment) {
             console.log("Incomplete payment found", payment);
         };
 
+        // Await Pi.init fully before calling Pi.authenticate. Do not pass "sandbox"
         try {
-            Pi.init({ version: "2.0", sandbox: true });
-            console.log("Pi SDK Initialized.");
+            Pi.init({ version: "2.0" });
+            console.log("Pi SDK Initialized without sandbox string.");
         } catch(e) {
-            console.log("Running in standard browser fallback.");
+            console.log("Standard browser fallback.");
         }
 
         function authenticatePioneer() {
             try {
-                // This triggers the integration prompt App Studio is looking for
-                Pi.authenticate(scopes, onIncompletePaymentFound).then(function(auth) {
-                    console.log("Authenticated successfully! Username: " + auth.user.username);
-                    document.getElementById('auth-btn').innerText = "Start Mining";
-                    document.getElementById('auth-btn').onclick = loadGamePlay;
+                // Call Pi.authenticate with required scope on button press
+                Pi.authenticate(['username'], onIncompletePaymentFound).then(function(auth) {
+                    // Keep the accessToken. Ignore the uid and username beside it.
+                    accessToken = auth.accessToken;
+                    console.log("Authenticated successfully inside App Studio.");
                     loadGamePlay();
                 }).catch(function(error) {
-                    console.error("Auth error, forcing bypass for developer sandbox:", error);
-                    loadGamePlay(); // Fallback to let you play even if sandbox bugs out
+                    console.error("Auth error, forcing bypass for testing:", error);
+                    loadGamePlay(); 
                 });
             } catch(err) {
                 loadGamePlay();
