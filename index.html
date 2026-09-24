@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pi-Crush Elite</title>
-    <!-- STEP 1 - Load the Pi SDK first -->
+    <!-- STEP 1 - Load official Pi SDK first -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
         :root {
@@ -285,13 +285,13 @@
             Pi.init({ version: "2.0" });
             console.log("Pi SDK Synced.");
         } catch(e) {
-            console.log("Local development sandbox fallback.");
+            console.log("Local execution.");
         }
 
         function authenticatePioneer() {
             try {
-                // STEP 1 - Call Pi.authenticate(["username"], onIncompletePaymentFound) on sign-in button press
+                // STEP 1 - Call Pi.authenticate(["username"], onIncompletePaymentFound) on button press
                 Pi.authenticate(['username'], onIncompletePaymentFound).then(function(auth) {
-                    // Keep the accessToken. Ignore uid and username beside it.
                     const accessToken = auth.accessToken;
                     
+                    // STEP 2 & STEP 3 - Exchange that accessToken with App Studio backend instantly
