@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pi-Crush Elite</title>
-    <!-- Official Pi Network SDK -->
-    <script src="https://minepi.com"></script>
+    <!-- STEP 1 - Load Official Pi Network SDK First -->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
         :root {
             --neon-gold: #f1c40f;
@@ -84,7 +84,6 @@
             margin-bottom: 30px;
         }
 
-        /* Security Banner Above Button */
         .security-banner {
             background: rgba(0, 210, 255, 0.05);
             border: 1px solid rgba(0, 210, 255, 0.2);
@@ -244,7 +243,6 @@
                 <div class="subtitle">Elite Edition</div>
             </div>
 
-            <!-- Global Pioneer Safety Notice -->
             <div class="security-banner">
                 <strong>🔒 Security Notice</strong>
                 We will never ask for your Passphrase. This connection is 100% secure via Pi Official SDK.
@@ -275,28 +273,25 @@
     </div>
 
     <script>
-        let accessToken = null;
+        let sessionToken = null;
 
+        function onIncompletePaymentFound(payment) {
+            console.log("Incomplete payment found", payment);
+        };
+
+        // Await Pi.init fully before calling Pi.authenticate
         try {
             Pi.init({ version: "2.0" });
             console.log("Pi SDK Synced.");
         } catch(e) {
-            console.log("Local execution sandbox mode.");
+            console.log("Local development sandbox fallback.");
         }
 
         function authenticatePioneer() {
             try {
-                Pi.authenticate(['username'], function(p){ console.log(p); }).then(function(auth) {
-                    accessToken = auth.accessToken;
-                    loadGamePlay();
-                }).catch(function(error) {
-                    console.log("Sandbox environment bypass active.");
-                    loadGamePlay(); 
-                });
-            } catch(err) {
-                loadGamePlay();
-            }
-        }
-
-        const menuView = document.getElementById('menu-view');
-        const gameplayView = document.getElementById('gameplay-view');
+                // STEP 1 - Sign the user in, call Pi.authenticate on button press
+                Pi.authenticate(['username'], onIncompletePaymentFound).then(function(auth) {
+                    // Keep the accessToken. Ignore uid and username beside it.
+                    const accessToken = auth.accessToken;
+                    
+                    // STEP 2 & 3 - Exchange that accessToken with App Studio backend instantly from the static frontend
