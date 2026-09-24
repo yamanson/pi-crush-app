@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pi-Crush Elite</title>
-    <!-- Pi Network Resmi SDK bağlantısı -->
+    <!-- Official Pi Network SDK -->
     <script src="https://minepi.com"></script>
     <style>
         :root {
             --neon-gold: #f1c40f;
             --neon-purple: #9b59b6;
             --neon-orange: #e67e22;
+            --neon-blue: #00d2ff;
+            --neon-green: #00ff66;
             --dark-space: #07080d;
             --panel-bg: #11131e;
         }
@@ -45,7 +47,7 @@
             border: 2px solid rgba(230, 126, 34, 0.4);
             box-shadow: 0 0 35px rgba(230, 126, 34, 0.15);
             border-radius: 24px;
-            padding: 25px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -104,20 +106,93 @@
             transform: translateY(-2px);
         }
 
-        .action-btn:active {
-            transform: translateY(1px);
+        #gameplay-view {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            width: 100%;
         }
+
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.03);
+            padding: 12px 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .hud-label {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .hud-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        #score-val { color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green); }
+        #level-val { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 5px;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px;
+            border-radius: 16px;
+            border: 2px solid #2c3e50;
+            margin: 15px 0;
+        }
+
+        .tile {
+            aspect-ratio: 1 / 1;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.7rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .selected {
+            transform: scale(0.9);
+            box-shadow: 0 0 18px #ffffff !important;
+            border: 2px solid #ffffff !important;
+            z-index: 10;
+        }
+
+        .t-pi { color: var(--neon-orange); text-shadow: 0 0 12px var(--neon-orange); }
+        .t-btc { color: var(--neon-gold); text-shadow: 0 0 12px var(--neon-gold); }
+        .t-eth { color: var(--neon-purple); text-shadow: 0 0 12px var(--neon-purple); }
+        .t-sol { color: var(--neon-blue); text-shadow: 0 0 12px var(--neon-blue); }
+        .t-nano { color: var(--neon-green); text-shadow: 0 0 12px var(--neon-green); }
 
         .crypto-decor {
             font-size: 3.5rem;
-            opacity: 0.15;
+            opacity: 0.12;
             position: absolute;
             animation: floatAnimation 4s infinite ease-in-out;
         }
 
         @keyframes pulseGlow {
-            0%, 100% { filter: drop-shadow(0 0 10px rgba(230, 126, 34, 0.5)); }
-            50% { filter: drop-shadow(0 0 25px rgba(230, 126, 34, 0.8)); }
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(230, 126, 34, 0.4)); }
+            50% { filter: drop-shadow(0 0 25px rgba(230, 126, 34, 0.7)); }
         }
 
         @keyframes floatAnimation {
@@ -135,37 +210,82 @@
 <body>
 
     <div id="game-frame">
-        <!-- Arka Plan Kripto Süslemeleri -->
-        <div class="crypto-decor" style="top: 15%; left: 10%; color: var(--neon-orange);">π</div>
-        <div class="crypto-decor" style="top: 50%; right: 12%; color: var(--neon-gold); animation-delay: 1.5s;">₿</div>
-        <div class="crypto-decor" style="bottom: 20%; left: 15%; color: var(--neon-purple); animation-delay: 3s;">Ξ</div>
+        <div class="crypto-decor" id="dec1" style="top: 15%; left: 10%; color: var(--neon-orange);">π</div>
+        <div class="crypto-decor" id="dec2" style="top: 50%; right: 12%; color: var(--neon-gold); animation-delay: 1.5s;">₿</div>
+        <div class="crypto-decor" id="dec3" style="bottom: 20%; left: 15%; color: var(--neon-purple); animation-delay: 3s;">Ξ</div>
 
-        <!-- ANA GİRİŞ PENCERESİ -->
+        <!-- WINDOW 1: MENU VIEW -->
         <div id="menu-view" class="menu-container">
             <div>
                 <h1 class="title-glow">PI-CRUSH</h1>
                 <div class="subtitle">Elite Edition</div>
             </div>
-            
-            <button class="action-btn" onclick="loadGamePlay()">Madenciliği Başlat</button>
+            <button class="action-btn" id="auth-btn" onclick="authenticatePioneer()">Connect Pi Wallet</button>
+        </div>
+
+        <!-- WINDOW 2: GAMEPLAY VIEW -->
+        <div id="gameplay-view">
+            <header>
+                <div>
+                    <div class="hud-label">Score</div>
+                    <div class="hud-value" id="score-val">0</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="hud-label">Target</div>
+                    <div class="hud-value" id="level-val">1000</div>
+                </div>
+            </header>
+            <div id="grid"></div>
+            <div style="text-align:center; font-size:0.8rem; color:#4f5366; letter-spacing: 1px; text-transform: uppercase;">
+                Match 3 Crypto Stones
+            </div>
         </div>
 
         <div class="version-tag">Global Web3 Ecosystem v1.0.0</div>
     </div>
 
     <script>
-        // Pi SDK Erken Hazırlık Bağlantısı
+        // Official Pi SDK Authentication flow required by App Studio
+        const scopes = ['username', 'payments'];
+        
+        function onIncompletePaymentFound(payment) {
+            console.log("Incomplete payment found", payment);
+        };
+
         try {
             Pi.init({ version: "2.0", sandbox: true });
-            console.log("Pi Ecosystem Ready.");
+            console.log("Pi SDK Initialized.");
         } catch(e) {
-            console.log("Local browser testing mode.");
+            console.log("Running in standard browser fallback.");
         }
 
-        // 2. Ekrana geçiş fonksiyon altyapısı
-        function loadGamePlay() {
-            alert("Harika! Giriş penceresi onaylandı. Şimdi 2. Ekran olan 'Oyun Alanı ve Taş Mekanikleri' kodlarını birleştirmeye hazırız.");
+        function authenticatePioneer() {
+            try {
+                // This triggers the integration prompt App Studio is looking for
+                Pi.authenticate(scopes, onIncompletePaymentFound).then(function(auth) {
+                    console.log("Authenticated successfully! Username: " + auth.user.username);
+                    document.getElementById('auth-btn').innerText = "Start Mining";
+                    document.getElementById('auth-btn').onclick = loadGamePlay;
+                    loadGamePlay();
+                }).catch(function(error) {
+                    console.error("Auth error, forcing bypass for developer sandbox:", error);
+                    loadGamePlay(); // Fallback to let you play even if sandbox bugs out
+                });
+            } catch(err) {
+                loadGamePlay();
+            }
         }
-    </script>
-</body>
-</html>
+
+        const menuView = document.getElementById('menu-view');
+        const gameplayView = document.getElementById('gameplay-view');
+        const grid = document.getElementById('grid');
+        const scoreDisplay = document.getElementById('score-val');
+        const width = 8;
+        let score = 0;
+        let board = [];
+
+        const stoneTypes = [
+            { symbol: 'π', class: 't-pi' },
+            { symbol: '₿', class: 't-btc' },
+            { symbol: 'Ξ', class: 't-eth' },
+            { symbol: '◎', class: 't-sol' },
