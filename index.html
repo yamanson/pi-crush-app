@@ -1,250 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Pi-Crush Premium Elite</title>
- <!-- Resmi Pi Network SDK Kütüphanesi -->
- <script src="https://minepi.com"></script>
- <style>
- body { 
- background: radial-gradient(circle, #1a0033 0%, #0a001a 100%);
- color: #fff; 
- font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
- text-align: center; 
- margin: 0; 
- padding: 10px;
- user-select: none;
- overflow-x: hidden;
- }
- h1 {
- font-size: 24px;
- text-transform: uppercase;
- letter-spacing: 2px;
- color: #fff;
- text-shadow: 0 0 10px #8a2be2, 0 0 20px #8a2be2;
- margin: 5px 0;
- }
- #auth-container { 
- margin: 0 auto 10px auto;
- background: rgba(22, 33, 62, 0.7); 
- padding: 8px; 
- border-radius: 10px; 
- border: 1px solid #ffbe0b; 
- max-width: 90%;
- }
- #auth-status { font-size: 13px; color: #ffbe0b; font-weight: bold; }
- #stats-container { display: flex; justify-content: center; gap: 5px; font-size: 12px; font-weight: bold; margin-bottom: 10px; width: 100%; max-width: 400px; margin-left: auto; margin-right: auto; }
- .stat-box { 
- background: rgba(22, 33, 62, 0.8); 
- padding: 6px 4px; 
- border-radius: 8px; 
- border: 2px solid #e94560; 
- flex: 1;
- min-width: 60px;
- }
- .stat-label { font-size: 9px; text-transform: uppercase; color: #aaa; margin-bottom: 2px; }
- .stat-val { font-size: 15px; color: #fff; }
- #board { 
- display: grid; 
- grid-template-columns: repeat(7, 1fr); 
- gap: 4px; 
- justify-content: center; 
- margin: 10px auto; 
- background-color: rgba(15, 52, 96, 0.4);
- padding: 8px; 
- border-radius: 14px; 
- width: 90vw; 
- max-width: 340px;
- aspect-ratio: 1 / 1;
- border: 2px solid #30475e;
- box-shadow: 0 0 25px rgba(0,0,0,0.8);
- box-sizing: border-box;
- }
- .tile { 
- width: 100%;
- height: 100%;
- border-radius: 8px; 
- display: flex; 
- align-items: center; 
- justify-content: center; 
- cursor: pointer; 
- box-sizing: border-box;
- font-size: 20px;
- font-weight: bold;
- color: #fff;
- aspect-ratio: 1 / 1;
- }
- .tile.pi { background: linear-gradient(135deg, #b5179e, #7209b7) !important; box-shadow: inset 0 0 8px #f72585; }
- .tile.ai { background: linear-gradient(135deg, #ff4e00, #ec9f05) !important; box-shadow: inset 0 0 8px #ffbe0b; }
- .tile.block { background: linear-gradient(135deg, #00b4d8, #0077b6) !important; box-shadow: inset 0 0 8px #90e0ef; }
- .tile.pick { background: linear-gradient(135deg, #00f5d4, #00bbf9) !important; box-shadow: inset 0 0 8px #fff; }
- .tile.cloud { background: linear-gradient(135deg, #ff007f, #ff007f) !important; box-shadow: inset 0 0 8px #fff; border-radius: 50%; }
- .tile.blank { background: transparent !important; box-shadow: none !important; }
- #joker-container { display: flex; justify-content: center; gap: 8px; margin-top: 15px; }
- .joker-box { 
- background: #16213e; border: 1px solid #30475e; padding: 5px; border-radius: 8px; 
- font-size: 11px; cursor: pointer; text-align: center; flex: 1; max-width: 90px;
- }
- .joker-count { background: #32cd32; color: white; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; margin-left: 4px; }
- .joker-ad-icon { font-size: 9px; color: #ffbe0b; display: block; margin-top: 2px; }
- #game-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #0f3460; padding: 25px; border-radius: 15px; border: 3px solid #ffbe0b; z-index: 100; text-align: center; }
- .btn-game { background: #e94560; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 12px; }
- </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pi-Crush Elite</title>
+    <!-- Pi Network Resmi SDK bağlantısı -->
+    <script src="https://minepi.com"></script>
+    <style>
+        :root {
+            --neon-gold: #f1c40f;
+            --neon-purple: #9b59b6;
+            --neon-orange: #e67e22;
+            --dark-space: #07080d;
+            --panel-bg: #11131e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--dark-space);
+            background-image: radial-gradient(circle at 50% 50%, #1a1c2e 0%, var(--dark-space) 80%);
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-frame {
+            width: 100%;
+            max-width: 430px;
+            height: 92vh;
+            max-height: 780px;
+            background: var(--panel-bg);
+            border: 2px solid rgba(230, 126, 34, 0.4);
+            box-shadow: 0 0 35px rgba(230, 126, 34, 0.15);
+            border-radius: 24px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            text-align: center;
+            gap: 20px;
+        }
+
+        .title-glow {
+            font-size: 2.4rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(45deg, var(--neon-gold), var(--neon-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(230, 126, 34, 0.6));
+            margin-bottom: 5px;
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 40px;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 2px solid var(--neon-orange);
+            color: #ffffff;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(230, 126, 34, 0.3);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 80%;
+        }
+
+        .action-btn:hover {
+            background: var(--neon-orange);
+            box-shadow: 0 0 25px var(--neon-orange);
+            transform: translateY(-2px);
+        }
+
+        .action-btn:active {
+            transform: translateY(1px);
+        }
+
+        .crypto-decor {
+            font-size: 3.5rem;
+            opacity: 0.15;
+            position: absolute;
+            animation: floatAnimation 4s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(230, 126, 34, 0.5)); }
+            50% { filter: drop-shadow(0 0 25px rgba(230, 126, 34, 0.8)); }
+        }
+
+        @keyframes floatAnimation {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(10deg); }
+        }
+
+        .version-tag {
+            font-size: 0.75rem;
+            color: #4f5366;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
- <h1>Pi-Crush Elite</h1>
- 
- <div id="auth-container">
- <div id="auth-status">Bağlantı Kuruluyor...</div>
- </div>
- 
- <div id="stats-container">
- <div class="stat-box"><div class="stat-label">Level</div><div class="stat-val" id="level-val">1</div></div>
- <div class="stat-box"><div class="stat-label">Moves</div><div class="stat-val" id="moves-val">20</div></div>
- <div class="stat-box"><div class="stat-label">Target</div><div class="stat-val" id="target-val">150</div></div>
- <div class="stat-box"><div class="stat-label">Score</div><div class="stat-val" id="score-val">0</div></div>
- </div>
- 
- <div id="board"></div>
- <div id="joker-container">
- <div class="joker-box" onclick="useJoker('hammer')">
- <div> Hammer</div><span id="hammer-count" class="joker-count">1</span>
- <span class="joker-ad-icon"> Refill</span>
- </div>
- <div class="joker-box" onclick="useJoker('bomb')">
- <div> Bomb</div><span id="bomb-count" class="joker-count">1</span>
- <span class="joker-ad-icon"> Refill</span>
- </div>
- <div class="joker-box" onclick="useJoker('shuffle')">
- <div> Shuffle</div><span id="shuffle-count" class="joker-count">1</span>
- <span class="joker-ad-icon"> Refill</span>
- </div>
- </div>
- 
- <div id="game-modal">
- <h2 id="modal-title">CONGRATULATIONS!</h2>
- <p id="modal-text">Level cleared successfully!</p>
- <button id="modal-btn" class="btn-game" onclick="closeModal()">Next Level</button>
- </div>
 
- <script>
- // --- PI NETWORK SDK ENTEGRASYONU VE DOĞRULAMA ---
- try {
-   // Sandbox modunda başlatılıyor (App Studio Geliştirici Önizlemesi İçin)
-   Pi.init({ version: "2.0", sandbox: true });
-   
-   // Kullanıcıdan izin isteme ve oturum açma akışı
-   Pi.authenticate(['username'], onIncompletePaymentFound)
-     .then(function(auth) {
-       document.getElementById('auth-status').textContent = "Pilot Connected: " + auth.user.username;
-       console.log("Pi Network oturumu başarıyla açıldı:", auth.user.username);
-       // Oturum açıldıktan sonra oyun motorunu tetikliyoruz
-       initGameEngine();
-     })
-     .catch(function(error) {
-       document.getElementById('auth-status').textContent = "Bağlantı Hatası!";
-       console.error("Pi Giriş Hatası:", error);
-       // Hata durumunda bile test panelinde donmaması için oyunu yedek olarak başlatıyoruz
-       initGameEngine();
-     });
- } catch(e) {
-   console.error("Pi SDK yüklenemedi, yerel modda başlatılıyor:", e);
-   window.onload = initGameEngine;
- }
+    <div id="game-frame">
+        <!-- Arka Plan Kripto Süslemeleri -->
+        <div class="crypto-decor" style="top: 15%; left: 10%; color: var(--neon-orange);">π</div>
+        <div class="crypto-decor" style="top: 50%; right: 12%; color: var(--neon-gold); animation-delay: 1.5s;">₿</div>
+        <div class="crypto-decor" style="bottom: 20%; left: 15%; color: var(--neon-purple); animation-delay: 3s;">Ξ</div>
 
- function onIncompletePaymentFound(payment) {
-   console.log("Eksik/Yarım kalmış ödeme bulundu:", payment);
- }
+        <!-- ANA GİRİŞ PENCERESİ -->
+        <div id="menu-view" class="menu-container">
+            <div>
+                <h1 class="title-glow">PI-CRUSH</h1>
+                <div class="subtitle">Elite Edition</div>
+            </div>
+            
+            <button class="action-btn" onclick="loadGamePlay()">Madenciliği Başlat</button>
+        </div>
 
- // --- GAME ENGINE (OYUN MOTORU BAŞLANGICI) ---
- function initGameEngine() {
- const width = 7;
- const tileTypes = ['pi', 'ai', 'block', 'pick', 'cloud'];
- const emojis = { 'pi': 'π', 'ai': '🤖', 'block': '📦', 'pick': '⛏️', 'cloud': '☁️' };
- const board = document.getElementById('board');
- 
- let score = 0, moves = 20, currentLevel = 1, targetScore = 150;
- let tiles = [], tileIdBeingDragged, tileIdBeingReplaced, gameActive = true;
- let inventory = { hammer: 1, bomb: 1, shuffle: 1 };
- let activeJoker = null;
+        <div class="version-tag">Global Web3 Ecosystem v1.0.0</div>
+    </div>
 
- function updateUI() {
- document.getElementById('score-val').textContent = score;
- document.getElementById('moves-val').textContent = moves;
- document.getElementById('level-val').textContent = currentLevel;
- document.getElementById('target-val').textContent = targetScore;
- document.getElementById('hammer-count').textContent = inventory.hammer;
- document.getElementById('bomb-count').textContent = inventory.bomb;
- document.getElementById('shuffle-count').textContent = inventory.shuffle;
- }
+    <script>
+        // Pi SDK Erken Hazırlık Bağlantısı
+        try {
+            Pi.init({ version: "2.0", sandbox: true });
+            console.log("Pi Ecosystem Ready.");
+        } catch(e) {
+            console.log("Local browser testing mode.");
+        }
 
- function createBoard() {
- board.innerHTML = "";
- tiles = [];
- for (let i = 0; i < width * width; i++) {
- const tile = document.createElement('div');
- const randomType = tileTypes[Math.floor(Math.random() * tileTypes.length)];
- tile.className = 'tile ' + randomType;
- tile.textContent = emojis[randomType];
- tile.setAttribute('draggable', true);
- tile.setAttribute('id', i);
- 
- tile.addEventListener('click', function() {
- if (activeJoker) { tileClick.call(this); }
- });
- tile.addEventListener('touchstart', touchStart, {passive: true});
- tile.addEventListener('touchmove', touchMove, {passive: false});
- tile.addEventListener('touchend', touchEnd);
- 
- tile.addEventListener('dragstart', dragStart);
- tile.addEventListener('dragover', dragOver);
- tile.addEventListener('dragenter', dragEnter);
- tile.addEventListener('dragleave', dragLeave);
- tile.addEventListener('drop', dragDrop);
- tile.addEventListener('dragend', dragEnd);
- board.appendChild(tile);
- tiles.push(tile);
- }
- updateUI();
- }
-
- // Dokunmatik Ekran Kontrolleri
- let startX, startY, activeTouchTileId;
- function touchStart(e) {
- if(!gameActive || activeJoker) return;
- const touch = e.touches[0];
- startX = touch.clientX;
- startY = touch.clientY;
- activeTouchTileId = parseInt(this.id);
- }
- function touchMove(e) { e.preventDefault(); }
- function touchEnd(e) {
- if(!gameActive || activeJoker || activeTouchTileId === undefined) return;
- const touch = e.changedTouches[0];
- const diffX = touch.clientX - startX;
- const diffY = touch.clientY - startY;
- let targetId = -1;
- if (Math.abs(diffX) > Math.abs(diffY)) {
- if (diffX > 30 && activeTouchTileId % width < width - 1) targetId = activeTouchTileId + 1;
- else if (diffX < -30 && activeTouchTileId % width > 0) targetId = activeTouchTileId - 1;
- } else {
- if (diffY > 30 && activeTouchTileId < 42) targetId = activeTouchTileId + width;
- else if (diffY < -30 && activeTouchTileId >= width) targetId = activeTouchTileId - width;
- }
- }
-
- // Sürükle-Bırak Masaüstü Kontrolleri
- function dragStart() { if(!gameActive || activeJoker) return; tileIdBeingDragged = parseInt(this.id); }
- function dragOver(e) { e.preventDefault(); }
- function dragEnter(e) { e.preventDefault(); }
- function dragLeave() {}
- function dragDrop() { tileIdBeingReplaced = parseInt(this.id); }
- function dragEnd() {
-   // Geçici yer değiştirme mantığı (Eksik kalan oyun döngüsünün kırılmaması için)
-   if(tileIdBeingDragged !== undefined && tileIdBeingReplaced !== undefined) {
-     let type1 = tiles[tileIdBeingDragged].className;
-     let type2 = tiles[tileIdBeingReplaced].className;
-     tiles[tileIdBeingDragged].className = type2;
-     tiles[tileIdBeingReplaced].className = type1;
-     let txt1 = tiles[tileIdBeingDragged].textContent;
+        // 2. Ekrana geçiş fonksiyon altyapısı
+        function loadGamePlay() {
+            alert("Harika! Giriş penceresi onaylandı. Şimdi 2. Ekran olan 'Oyun Alanı ve Taş Mekanikleri' kodlarını birleştirmeye hazırız.");
+        }
+    </script>
+</body>
+</html>
