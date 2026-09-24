@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pi-Crush Elite</title>
-    <!-- STEP 1 - Load Official Pi Network SDK First -->
+    <!-- STEP 1 - Load the Pi SDK first -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
         :root {
@@ -279,7 +279,8 @@
             console.log("Incomplete payment found", payment);
         };
 
-        // Await Pi.init fully before calling Pi.authenticate
+        // STEP 1 - Await Pi.init({ version: "2.0" }) fully before calling Pi.authenticate(...)
+        // Do not pass "sandbox"
         try {
             Pi.init({ version: "2.0" });
             console.log("Pi SDK Synced.");
@@ -289,9 +290,8 @@
 
         function authenticatePioneer() {
             try {
-                // STEP 1 - Sign the user in, call Pi.authenticate on button press
+                // STEP 1 - Call Pi.authenticate(["username"], onIncompletePaymentFound) on sign-in button press
                 Pi.authenticate(['username'], onIncompletePaymentFound).then(function(auth) {
                     // Keep the accessToken. Ignore uid and username beside it.
                     const accessToken = auth.accessToken;
                     
-                    // STEP 2 & 3 - Exchange that accessToken with App Studio backend instantly from the static frontend
